@@ -23,6 +23,7 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
               id: log.transaction?.hash,
               createdAtBlock: BigInt(block.header.height),
               createdAtTimestamp: BigInt(block.header.timestamp)})
+            ctx.store.save<User>(user);
             }
 
          if (log.topics[0] === TokenIdRegistryABI.events.Register.topic) {
@@ -32,6 +33,7 @@ processor.run(new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
                   createdAtBlock: BigInt(block.header.height),
                   createdAtTimestamp: BigInt(block.header.timestamp)
                 })
+           ctx.store.save<UserFname>(userFname);
           }
         }
     }
