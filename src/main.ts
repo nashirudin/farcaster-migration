@@ -1,6 +1,6 @@
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import {CONTRACT_ADDRESS, REGISTRY_CONTRACT, processor} from './processor'
-import { User, UserFname} from './model'
+import {User, UserFname} from './model'
 
 import * as FarcasterNameRegistryABI from './abi/FarcasterNameRegistry'
 import * as TokenIdRegistryABI from './abi/TokenIdRegistry'
@@ -11,15 +11,30 @@ import * as TokenIdRegistryABI from './abi/TokenIdRegistry'
 
 
 
+
 processor.run(new TypeormDatabase({supportHotBlocks: true}), async (ctx) => {
-    for (let c of ctx.blocks) {
-        for (let log of c.logs) {
+  const users: Map<string, User> = new Map();
+  const usersFnames: Map<string, UserFname> = new Map();
+    for (let block of ctx.blocks) {
+        for (let log of block.logs) {
           if (log.topics[0] === FarcasterNameRegistryABI.events.Transfer.topic) {
-            let {from, to, tokenId } = FarcasterNameRegistryABI.events.Transfer.decode(log);
+            let event = FarcasterNameRegistryABI.events.Transfer.decode(log);
+            let user = new User({
+              id: log.transaction?.hash,
+              createdAtBlock: BigInt(block.header.height),
+              createdAtTimestamp: BigInt(block.header.timestamp)})
+            }
+
          if (log.topics[0] === TokenIdRegistryABI.events.Register.topic) {
-                let {to, id, recovery, url } = TokenIdRegistryABI.events.Register.decode(log);
+                let event = TokenIdRegistryABI.events.Register.decode(log);
+                let userFname = new UserFname({
+                  id: log.transaction?.hash,
+                  createdAtBlock: BigInt(block.header.height),
+                  createdAtTimestamp: BigInt(block.header.timestamp)
+                })
           }
         }
     }
-}
+    await ctx.store.upsert([...users.values()]);
+    await ctx.store.upsert([...usersFnames.values()]);
 })
